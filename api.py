@@ -86,6 +86,14 @@ def hello():
            "    <li>Last Heard - The last time the station was received in UTC timezone</li>" \
            "    <li>Coordinates - The X & Y coordinates of the station</li>" \
            "  </ul>" \
+           "<li><a href='/api/denver_digipeaters'>Denver area digipeaters (RF)</a></li>" \
+           "  <ul>" \
+           "    <li>Call - The digipeater's callsign</li>" \
+           "    <li>Last Heard - The last time the digipeater was received in UTC timezone</li>" \
+           "    <li>Grid - The digipeater Maidenhead grid square</li>" \
+           "    <li>SSID - The digipeater's SSID</li>" \
+           "    <li>Coordinates - The digipeater's X & Y coordinates</li>" \
+           "  </ul>" \
            "</ul>"
 
 
@@ -171,6 +179,20 @@ class RemoteDigipeaters(Resource):
         return jsonify(result)
 
 
+class DenverDigipeaters(Resource):
+    """
+    Denver digipeaters API
+    """
+    def get(self):
+        conn = remote_engine.connect()
+        query = conn.execute("select call, coalesce(to_char(lastheard,"
+                             "'YYYY-MM-DD HH24:MI:SS'), 'NULL'), grid, ssid, "
+                             "(st_x(geom), st_y(geom)) "
+                             "from digipeaters")
+        result = {'denver_digipeaters': [i for i in query.cursor.fetchall()]}
+        return jsonify(result)
+
+
 class Nodes(Resource):
     """
     NET/ROM nodes API
@@ -190,6 +212,7 @@ api.add_resource(RemoteDigipeaters, '/api/digipeaters')
 api.add_resource(Nodes, '/api/nodes')
 api.add_resource(DenverMH, '/api/denver_mheard')
 api.add_resource(DenverOperators, '/api/denver_operators')
+api.add_resource(DenverDigipeaters, '/api/denver_digipeaters')
 
 if __name__ == '__main__':
     app.run()
